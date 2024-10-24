@@ -4,17 +4,20 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.wpilibj.ADIS16448_IMU;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.AnalogGyro;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
-  public static final double kMaxSpeed = 3.0; // 3 meters per second
-  public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
+  public static final double kMaxSpeed = 0.5; // 3 meters per second
+  public static final double kMaxAngularSpeed = Math.PI / 2; // 1/2 rotation per second
 
   private final Translation2d m_frontLeftLocation = new Translation2d(0.33655, 0.33655);
   private final Translation2d m_frontRightLocation = new Translation2d(0.33655, -0.33655);
@@ -26,7 +29,8 @@ public class Drivetrain {
   private final SwerveModule m_backLeft = new SwerveModule(51, 50);
   private final SwerveModule m_backRight = new SwerveModule(21, 20);
 
-  private final AnalogGyro m_gyro = new AnalogGyro(0);
+  //private final AnalogGyro m_gyro = new AnalogGyro(0);
+  private final ADXRS450_Gyro m_gyro = new ADXRS450_Gyro();
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(
@@ -35,7 +39,7 @@ public class Drivetrain {
   private final SwerveDriveOdometry m_odometry =
       new SwerveDriveOdometry(
           m_kinematics,
-          m_gyro.getRotation2d(),
+          Rotation2d.fromDegrees(m_gyro.getAngle()),
           new SwerveModulePosition[] {
             m_frontLeft.getPosition(),
             m_frontRight.getPosition(),
@@ -62,7 +66,7 @@ public class Drivetrain {
             ChassisSpeeds.discretize(
                 fieldRelative
                     ? ChassisSpeeds.fromFieldRelativeSpeeds(
-                        xSpeed, ySpeed, rot, m_gyro.getRotation2d())
+                        xSpeed, ySpeed, rot, Rotation2d.fromDegrees(m_gyro.getAngle()))
                     : new ChassisSpeeds(xSpeed, ySpeed, rot),
                 periodSeconds));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
@@ -75,12 +79,16 @@ public class Drivetrain {
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
     m_odometry.update(
-        m_gyro.getRotation2d(),
+        Rotation2d.fromDegrees(m_gyro.getAngle()),
         new SwerveModulePosition[] {
           m_frontLeft.getPosition(),
           m_frontRight.getPosition(),
           m_backLeft.getPosition(),
           m_backRight.getPosition()
         });
+  }
+
+  public ADXRS450_Gyro getGyro() {
+    return m_gyro;
   }
 }
